@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Detail</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .order-header-card {
+          background: var(--bg-card);
+          border: 1px solid var(--border);
+          border-radius: 14px;
+          padding: 1.5rem;
+          margin-top: 1.5rem;
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          gap: 1rem;
+        }
+        .order-field {
+          padding: .75rem 1rem;
+          background: var(--bg-elevated);
+          border-radius: 10px;
+        }
+        .order-field-label {
+          font-size: .68rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: .08em;
+          color: var(--text-dim);
+          margin-bottom: .35rem;
+        }
+        .order-field-value {
+          font-size: .9rem;
+          font-weight: 600;
+          color: var(--text);
+          word-break: break-word;
+        }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{fragments/layout :: sidebar('order-detail')}"></aside>
+
+    <div class="main-content">
+        <header class="topbar">
+            <div class="topbar-title">
+                Order Detail
+                <small><code style="color:var(--gold)">GET /api/orders/{id}</code></small>
+            </div>
+            <div class="topbar-spacer"></div>
+            <div class="topbar-badge">API 7</div>
+        </header>
+
+        <div class="page-body">
+            <div class="breadcrumb animate-in">
+                <a th:href="@{/ui/dashboard}">Dashboard</a>
+                <span class="sep">/</span>
+                <span class="current">Order Detail</span>
+            </div>
+
+            <div class="page-header animate-in">
+                <h2>Order with Line Items</h2>
+                <p>Enter an order number to see full details including all products ordered.</p>
+            </div>
+
+            <!-- Search -->
+            <div class="filter-bar animate-in">
+                <form action="/ui/order-lookup" method="get" style="display:contents;">
+                    <div class="form-field">
+                        <label>Order Number</label>
+                        <input type="number" name="id" placeholder="e.g. 10100" th:value="${orderId}" min="1">
+                    </div>
+                    <div style="display:flex; gap:.5rem; align-items:flex-end;">
+                        <button type="submit" class="btn btn-primary">Get Order Details</button>
+                        <a href="/ui/order-lookup" class="btn btn-ghost">Clear</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Error -->
+            <div th:if="${error}" class="alert alert-danger animate-in" th:text="${error}"></div>
+
+            <!-- Empty prompt -->
+            <div th:if="${order == null and error == null and orderId == null}" class="empty-state animate-in">
+                <h3>Enter an Order Number</h3>
+                <p>Type an order number above to view full details. Try: 10100, 10101, 10102.</p>
+            </div>
+
+            <!-- Order Info -->
+            <div th:if="${order != null}" class="animate-in">
+
+                <!-- Summary Stats -->
+                <div class="stats-row stagger">
+                    <div class="stat-card">
+                        <div class="stat-label">Order Number</div>
+                        <div class="stat-value text-gold"
+                             th:text="${order['orderNumber']}">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Status</div>
+                        <div class="stat-value" style="font-size:1rem;">
+              <span class="badge"
+                    th:classappend="${order['status'] == 'Shipped'}    ? 'badge-shipped'   :
+                                    (${order['status'] == 'Cancelled'} ? 'badge-cancelled' :
+                                    (${order['status'] == 'In Process'}? 'badge-inprocess' :
+                                    (${order['status'] == 'Resolved'}  ? 'badge-resolved'  :
+                                    (${order['status'] == 'Disputed'}  ? 'badge-disputed'  :
+                                    (${order['status'] == 'On Hold'}   ? 'badge-onhold'    : 'badge-default')))))"
+                    th:text="${order['status']}">Status</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Order Date</div>
+                        <div class="stat-value" style="font-size:1rem;"
+                             th:text="${order['orderDate']}">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Customer #</div>
+                        <div class="stat-value" style="font-size:1rem;"
+                             th:text="${order['customerNumber']}">—</div>
+                    </div>
+                </div>
+
+                <!-- Order Header Details -->
+                <div class="order-header-card stagger">
+                    <div class="order-field" th:if="${order['orderDate'] != null}">
+                        <div class="order-field-label">Order Date</div>
+                        <div class="order-field-value" th:text="${order['orderDate']}"></div>
+                    </div>
+                    <div class="order-field" th:if="${order['requiredDate'] != null}">
+                        <div class="order-field-label">Required Date</div>
+                        <div class="order-field-value" th:text="${order['requiredDate']}"></div>
+                    </div>
+                    <div class="order-field" th:if="${order['shippedDate'] != null}">
+                        <div class="order-field-label">Shipped Date</div>
+                        <div class="order-field-value" th:text="${order['shippedDate']}"></div>
+                    </div>
+                    <div class="order-field" th:if="${order['comments'] != null}">
+                        <div class="order-field-label">Comments</div>
+                        <div class="order-field-value" style="font-size:.8rem; color:var(--text-muted);"
+                             th:text="${order['comments']}"></div>
+                    </div>
+                </div>
+
+                <!-- Line Items Table -->
+                <div class="table-container animate-in" style="margin-top:1.5rem;"
+                     th:if="${order['orderDetails'] != null and !#lists.isEmpty(order['orderDetails'])}">
+                    <div class="table-toolbar">
+            <span class="table-toolbar-title">
+              Line Items —
+              <span th:text="${#lists.size(order['orderDetails'])}"></span> products
+            </span>
+                        <span class="badge badge-gold">Order #<span th:text="${order['orderNumber']}"></span></span>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Line #</th>
+                                <th>Product Code</th>
+                                <th>Quantity</th>
+                                <th>Price Each</th>
+                                <th>Line Total</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="d : ${order['orderDetails']}">
+                                <td class="text-muted text-sm"
+                                    th:text="${d['orderLineNumber']}">1</td>
+                                <td class="font-mono text-gold"
+                                    th:text="${d['productCode']}">S00_0000</td>
+                                <td style="font-weight:600;"
+                                    th:text="${d['quantityOrdered']}">0</td>
+                                <td th:text="${d['priceEach'] != null} ? '$' + ${d['priceEach']} : '—'">$0</td>
+                                <td class="text-gold" style="font-weight:600;"
+                                    th:text="${d['quantityOrdered'] != null and d['priceEach'] != null}
+                                ? '$' + ${#numbers.formatDecimal(d['quantityOrdered'] * d['priceEach'], 1, 'COMMA', 2, 'POINT')}
+                                : '—'">$0</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- No line items -->
+                <div th:if="${order['orderDetails'] == null or #lists.isEmpty(order['orderDetails'])}"
+                     class="empty-state animate-in" style="margin-top:1.5rem;">
+                    <h3>No line items found</h3>
+                    <p>This order has no product details attached.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
