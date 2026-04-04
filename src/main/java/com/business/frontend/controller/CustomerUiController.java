@@ -104,24 +104,19 @@ public class CustomerUiController {
             @RequestParam(required = false) Integer id,
             Model model, HttpSession session) {
 
-        model.addAttribute("activeTab", "customer-orders");
         if (id == null) return "customer-lookup";
 
         model.addAttribute("customerId", id);
         HttpEntity<Void> entity = new HttpEntity<>(ApiHelper.bearerHeaders(session));
 
         try {
-            // Use Object to handle whatever the backend returns
-            ResponseEntity<Object> resp = restTemplate.exchange(
+            // Backend returns Page<OrderDto> — extract content list
+            ResponseEntity<Map> resp = restTemplate.exchange(
                     BASE_URL + "/customers/" + id + "/orders",
-                    HttpMethod.GET, entity,
-                    new ParameterizedTypeReference<Object>() {});
-            Object body = resp.getBody();
-            if (body instanceof List) {
-                model.addAttribute("orders", body);
-            } else {
-                model.addAttribute("orders", List.of(body));
-            }
+                    HttpMethod.GET, entity, Map.class);
+            Map<?, ?> body = resp.getBody();
+            model.addAttribute("orders", body.get("content"));
+            model.addAttribute("totalOrders", body.get("totalElements"));
         } catch (Exception e) {
             model.addAttribute("error", "Could not load orders: " + e.getMessage());
         }

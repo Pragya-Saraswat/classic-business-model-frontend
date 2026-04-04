@@ -35,16 +35,29 @@
             </div>
             <div th:if="${orders != null and !#lists.isEmpty(orders)}" class="table-container animate-in">
                 <div class="table-toolbar">
-                    <span class="table-toolbar-title">Orders for Customer #<span th:text="${customerId}"></span></span>
-                    <span class="badge badge-emerald" th:text="${#lists.size(orders)} + ' orders'"></span>
+                      <span class="table-toolbar-title">
+                        Orders for Customer #<span th:text="${customerId}"></span>
+                      </span>
+                      <span class="badge badge-emerald"
+                          th:text="${totalOrders != null} ? ${totalOrders} + ' orders' : ''">
+                      </span>
                 </div>
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>Order #</th><th>Order Date</th><th>Required Date</th><th>Shipped Date</th><th>Status</th><th>Comments</th></tr></thead>
+                        <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Order Date</th>
+                        <th>Required Date</th>
+                        <th>Shipped Date</th>
+                        <th>Status</th>
+                        <th>Customer Name</th>
+                    </tr>
+                    </thead>
                         <tbody>
                         <tr th:each="o : ${orders}">
                             <td class="text-gold font-mono"
-                                th:text="${o['orderNumber'] != null} ? ${o['orderNumber']} : ${o['id']}"></td>
+                                th:text="${o['orderNumber']}"></td>
                             <td th:text="${o['orderDate'] != null} ? ${o['orderDate']} : '—'"></td>
                             <td th:text="${o['requiredDate'] != null} ? ${o['requiredDate']} : '—'"></td>
                             <td th:text="${o['shippedDate'] != null} ? ${o['shippedDate']} : '—'"></td>
@@ -52,8 +65,8 @@
       <span class="badge badge-default"
             th:text="${o['status'] != null} ? ${o['status']} : '—'"></span>
                             </td>
-                            <td class="text-muted text-sm"
-                                th:text="${o['comments'] != null} ? ${o['comments']} : '—'"></td>
+                            <td style="font-weight:500;"
+                                th:text="${o['customerName'] != null} ? ${o['customerName']} : '—'"></td>
                         </tr>
                         </tbody>
                     </table>
